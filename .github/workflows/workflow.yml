@@ -29,14 +29,6 @@ jobs:
       TF_VAR_instance_type: ${{ vars.INSTANCE_TYPE }}
       TF_VAR_ami: ${{ vars.AWS_AMI_ID }}
       TF_VAR_ssh_user: ${{ vars.SSH_USER }}
-
-      DB_URL: ${{ secrets.DB_URL }}
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
-      RABBIT_URL: ${{ secrets.RABBIT_URL }}
       
 
     steps:
@@ -82,7 +74,17 @@ jobs:
       - name: Terraform Apply
         working-directory: ./terraform_infra
         if: ${{ github.event.inputs.terra_op == 'apply' }}
+        # generate .env file for application setup, to be used in provisioner script
+        # apply terraform changes after that
         run: |
+          echo "DB_URL=${{ secrets.DB_URL }}" >> ../setup/.env
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> ../setup/.env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> ../setup/.env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> ../setup/.env
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> ../setup/.env
+          echo "REDIS_URL=${{ secrets.REDIS_URL }}" >> ../setup/.env
+          echo "RABBIT_URL=${{ secrets.RABBIT_URL }}" >> ../setup/.env
+        
           terraform plan -out=tfplan
           terraform apply -auto-approve tfplan
 
