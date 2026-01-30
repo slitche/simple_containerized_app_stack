@@ -46,14 +46,11 @@ resource "null_resource" "copy_and_run" {
   connection {
     type = "ssh"
     user = "ubuntu" # or ec2-user depending on your AMI
-    # private_key = var.ssh_private_key
-    private_key = file("../monitoring_keypair.pem")
+    private_key = var.ssh_private_key
+    # private_key = file("../monitoring_keypair.pem")
     host        = aws_instance.app-server.public_ip
   }
 
-# provisioner "remote-exec" {
-#   inline = ["mkdir -p /home/${var.ssh_user}/app_setup"]
-# }
 
   provisioner "file" {
     source      = "../setup/"
