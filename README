@@ -1,0 +1,20 @@
+#   This is a sample containerized (Docker - compose) stack deployed in a single host/VM via AWS X Terraform
+#   Intergration testing was also included in the implementation.
+#   
+#   Stacks used: 
+#   1. App server (python)
+#   2. rabbitmq (message queue|broker)
+#   3. PostgreSQL (database)
+#   4. redis (caching)
+#
+#   
+#   Tools:
+#   1. Terraform (Infra provisioning)
+#   2. Docker   (containerization)
+#   3. AWS (VM | platform)
+#   4. Github Actions (Workflow)
+#
+#
+#
+#
+#

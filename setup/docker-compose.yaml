@@ -1,0 +1,62 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DB_URL: ${DB_URL}
+      REDIS_URL: ${REDIS_URL}
+      RABBIT_URL: ${RABBIT_URL}
+      SECRET_KEY: ${SECRET_KEY}
+    volumes:
+      - ./app:/app/app        # bind mount for live code sync
+    depends_on:
+      - db
+      - redis
+      - rabbitmq
+    networks: 
+      - frontend 
+      - backend
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # ports:
+    #   - "5432:5432" # uncomment if you want to access DB from host machine
+    volumes:
+      - db_data:/var/lib/postgresql/data   # named volume for DB persistence
+    networks: 
+      - backend 
+
+  redis:
+    image: redis:7.2
+    # ports:
+    #   - "6379:6379" # uncomment if you want to access Redis from host machine
+    depends_on:
+      - db
+    volumes:
+      - redis_data:/data                   # optional persistence
+    networks: 
+      - backend 
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      # - "5672:5672" # default RabbitMQ port (uncomment if needed)
+      - "15672:15672"  # management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq    # optional persistence
+    networks: 
+      - backend 
+
+volumes:
+  db_data:
+  redis_data:
+  rabbitmq_data:
+ 
+networks:  # this will only work if your stack is within the same docker-compose.yaml file/VM
+  frontend: # public network (app <-> outside world)
+  backend: # private network (app <-> db/redis/rabbitmq)

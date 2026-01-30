@@ -1,0 +1,7 @@
+.vagrant/
+# .env
+monitoring_keypair.pem
+terraform_infra/.terraform/
+terraform_infra/terraform.tfstate
+terraform_infra/terraform.tfstate.backup
+terraform_infra/.terraform.lock.hcl
