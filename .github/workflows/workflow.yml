@@ -29,6 +29,14 @@ jobs:
       TF_VAR_instance_type: ${{ vars.INSTANCE_TYPE }}
       TF_VAR_ami: ${{ vars.AWS_AMI_ID }}
       TF_VAR_ssh_user: ${{ vars.SSH_USER }}
+
+      DB_URL: ${{ secrets.DB_URL }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      RABBIT_URL: ${{ secrets.RABBIT_URL }}
       
 
     steps:
