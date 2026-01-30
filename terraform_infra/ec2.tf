@@ -45,7 +45,7 @@ resource "null_resource" "copy_and_run" {
   # Define the SSH connection once
   connection {
     type = "ssh"
-    user = "ubuntu" # or ec2-user depending on your AMI
+    user = var.ssh_user # or ec2-user depending on your AMI
     private_key = var.ssh_private_key
     # private_key = file("../monitoring_keypair.pem")
     host        = aws_instance.app-server.public_ip
