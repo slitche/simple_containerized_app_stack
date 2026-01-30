@@ -13,37 +13,74 @@ app = FastAPI()
 engine = create_engine(DB_URL)
 redis_client = redis.Redis.from_url(REDIS_URL)
 
-def rabbitmq_check():
+# --- RabbitMQ Helpers ---
+def rabbitmq_publish(queue: str, message: str):
     try:
         conn = pika.BlockingConnection(pika.URLParameters(RABBIT_URL))
         channel = conn.channel()
-        channel.queue_declare(queue='test')
-        channel.basic_publish(exchange='', routing_key='test', body='ping')
+        channel.queue_declare(queue=queue, durable=True)
+        channel.basic_publish(exchange='', routing_key=queue, body=message)
         conn.close()
         return True
     except Exception:
         return False
 
+def rabbitmq_check_real():
+    """Publish and immediately consume a test message to prove broker works."""
+    try:
+        conn = pika.BlockingConnection(pika.URLParameters(RABBIT_URL))
+        channel = conn.channel()
+        channel.queue_declare(queue='status_test', durable=True)
+
+        # Publish test message
+        channel.basic_publish(exchange='', routing_key='status_test', body='ping')
+
+        # Try to consume it back
+        method_frame, header_frame, body = channel.basic_get(queue='status_test', auto_ack=True)
+        conn.close()
+        return body == b'ping'
+    except Exception:
+        return False
+
 # --- Auth ---
 def authenticate_user(username, password):
+    # First check Redis cache
+    cached_pw = redis_client.get(f"user:{username}:pw")
+    if cached_pw:
+        return cached_pw.decode() == password
+
+    # If not cached, query PostgreSQL
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT password FROM users WHERE username=:u"), {"u": username}).fetchone()
-        return result and result[0] == password
+        result = conn.execute(
+            text("SELECT password FROM users WHERE username=:u"), {"u": username}
+        ).fetchone()
+        if result:
+            # Cache the password for 5 minutes
+            redis_client.setex(f"user:{username}:pw", 300, result[0])
+            return result[0] == password
+    return False
 
 @app.post("/login")
 def login(username: str, password: str):
     if not authenticate_user(username, password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
     token = jwt.encode({"user": username}, SECRET_KEY, algorithm="HS256")
+
+    # Publish login event to RabbitMQ
+    rabbitmq_publish("login_events", f"User {username} logged in")
+
     return {"token": token}
 
 @app.get("/status")
 def status(token: str):
+    # Validate JWT
     try:
         jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    # Check DB
     db_ok = False
     try:
         with engine.connect() as conn:
@@ -52,8 +89,16 @@ def status(token: str):
     except:
         pass
 
-    redis_ok = redis_client.ping()
-    rabbit_ok = rabbitmq_check()
+    # Check Redis by storing and retrieving a test key
+    redis_ok = False
+    try:
+        redis_client.set("status:test", "ok", ex=10)
+        redis_ok = redis_client.get("status:test") == b"ok"
+    except:
+        pass
+
+    # Check RabbitMQ by publish/consume
+    rabbit_ok = rabbitmq_check_real()
 
     return {
         "database": db_ok,
