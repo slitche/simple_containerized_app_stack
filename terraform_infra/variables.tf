@@ -1,5 +1,5 @@
 
-variable "my_ip" {
+variable "my_ip_cidr" {
   description = "My IP address for security group rules"
   type        = string
 }
