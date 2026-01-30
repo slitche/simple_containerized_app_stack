@@ -20,7 +20,8 @@ provider "aws" {
   region = var.region
 }
 
-# # Get your current public IP
-# data "http" "myip" {
-#   url = "https://checkip.amazonaws.com/"
-# }
+# Need to get my IP address for security group since GitHub Actions runners have dynamic IPs..
+# and we have to upload files via SSH
+data "http" "myip" {
+  url = "https://checkip.amazonaws.com/"
+}
