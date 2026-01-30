@@ -72,6 +72,7 @@ jobs:
 
 
       - name: Terraform Apply
+        id: apply_terraform
         working-directory: ./terraform_infra
         if: ${{ github.event.inputs.terra_op == 'apply' }}
         # generate .env file for application setup, to be used in provisioner script
@@ -87,6 +88,17 @@ jobs:
         
           terraform plan -out=tfplan
           terraform apply -auto-approve tfplan
+      
+      - name: Revoke GitHub Actions runner IP from SG
+        working-directory: ./terraform_infra
+        if: ${{ github.steps.apply_terraform.conclusion == 'success' && github.event.inputs.terra_op == 'apply' }}
+        run: |
+          mv upload_sg.tf upload_sg.tf.ext
+          mv final_sg.tf.ext final_sg.tf
+
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
+
 
       - name: Terraform Destroy
         working-directory: ./terraform_infra
