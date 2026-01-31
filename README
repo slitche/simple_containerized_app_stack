@@ -21,4 +21,5 @@
 #   in github
 #   2. Environment variables needed by the containers will be created/defined in the workflow using github secrets.
 #   3. From the runner, we'll upload (via Terraform provisioner) needed files to the VM created via Terraform.
+#   4. Docker related commands to provision the containers will be executed by Terraform as well. 
 #   4. After the upload, we'll update the instance's security group to remove the ingress rule which allows the runner's IP to upload files in the host (for extra security).
